@@ -237,7 +237,7 @@ fn main() -> ! {
 
     // configure button
     let _action_high_pin = pins.gp8.into_push_pull_output_in_state(PinState::High);
-    let mut action_in_pin = pins.gp14.into_pull_down_input();
+    let mut action_in_pin = pins.gp14.into_pull_up_input();
 
     let mut last_state = false;
     let mut ctr = 0;
@@ -252,7 +252,7 @@ fn main() -> ! {
             continue;
         };
 
-        while action_in_pin.is_high().unwrap() {
+        while action_in_pin.is_low().unwrap() {
             if !last_state {
                 ctr += 1;
                 last_state = true;
