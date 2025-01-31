@@ -13,7 +13,7 @@ use embedded_graphics::{
     prelude::*,
     text::Text,
 };
-use embedded_hal::digital::{InputPin, PinState};
+use embedded_hal::digital::InputPin;
 use fugit::ExtU32;
 use fugit::RateExtU32;
 use panic_halt as _;
@@ -213,6 +213,11 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
+    // configure button
+    let mut action_in_pin = pins.gp8.into_pull_up_input();
+    let mut up_in_pin = pins.gp27.into_pull_up_input();
+    let mut down_in_pin = pins.gp15.into_pull_up_input();
+
     // Configure small display
     let i2c = I2C::i2c0(
         pac.I2C0,
@@ -235,10 +240,7 @@ fn main() -> ! {
     );
     let mut big_display = big::init(i2c);
 
-    // configure button
-    let _action_high_pin = pins.gp8.into_push_pull_output_in_state(PinState::High);
-    let mut action_in_pin = pins.gp14.into_pull_up_input();
-
+    // game state
     let mut last_state = false;
     let mut ctr = 0;
     let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
@@ -255,6 +257,26 @@ fn main() -> ! {
         while action_in_pin.is_low().unwrap() {
             if !last_state {
                 ctr += 1;
+                last_state = true;
+            }
+            delay.start(50.millis());
+            let _ = nb::block!(delay.wait());
+        }
+        last_state = false;
+
+        while up_in_pin.is_low().unwrap() {
+            if !last_state {
+                ctr = 100;
+                last_state = true;
+            }
+            delay.start(50.millis());
+            let _ = nb::block!(delay.wait());
+        }
+        last_state = false;
+
+        while down_in_pin.is_low().unwrap() {
+            if !last_state {
+                ctr = 0;
                 last_state = true;
             }
             delay.start(50.millis());
