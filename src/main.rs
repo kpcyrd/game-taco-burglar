@@ -218,8 +218,8 @@ fn main() -> ! {
     let mut up_in_pin = pins.gp27.into_pull_up_input();
     let mut down_in_pin = pins.gp15.into_pull_up_input();
 
-    // Configure small display
-    let i2c = I2C::i2c0(
+    // setup i2c
+    let small_i2c = I2C::i2c0(
         pac.I2C0,
         pins.gp12.into_pull_type().into_function(), // sda
         pins.gp13.into_pull_type().into_function(), // scl
@@ -227,10 +227,7 @@ fn main() -> ! {
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
     );
-    let mut small_display = small::init(i2c);
-
-    // Configure big display
-    let i2c = I2C::i2c1(
+    let big_i2c = I2C::i2c1(
         pac.I2C1,
         pins.gp10.into_pull_type().into_function(), // sda
         pins.gp11.into_pull_type().into_function(), // scl
@@ -238,7 +235,10 @@ fn main() -> ! {
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
     );
-    let mut big_display = big::init(i2c);
+
+    // init screens
+    let mut small_display = small::init(small_i2c);
+    let mut big_display = big::init(big_i2c);
 
     // game state
     let mut last_state = false;
