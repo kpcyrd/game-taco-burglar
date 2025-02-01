@@ -94,7 +94,7 @@ checksum = "e37549a379a9e0e6e576fd208ee60394ccb8be963889eebba3ffe0980364f472"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -138,7 +138,7 @@ dependencies = [
  "proc-macro-error2",
  "proc-macro2",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -301,7 +301,7 @@ checksum = "e99b8b3c28ae0e84b604c75f721c21dc77afb3706076af5e8216d15fd1deaae3"
 dependencies = [
  "frunk_proc_macro_helpers",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -313,7 +313,7 @@ dependencies = [
  "frunk_core",
  "proc-macro2",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -323,6 +323,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17186ad64927d5ac8f02c1e77ccefa08ccd9eaa314d5a4772278aa204a22f7e7"
 dependencies = [
  "gcd",
+]
+
+[[package]]
+name = "game-taco-burglar"
+version = "0.1.0"
+dependencies = [
+ "cortex-m-rt",
+ "defmt-rtt",
+ "embedded-graphics",
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "fugit",
+ "itoa",
+ "nb 1.1.0",
+ "panic-halt",
+ "sh1106",
+ "ssd1306",
+ "waveshare-rp2040-zero",
 ]
 
 [[package]]
@@ -375,7 +393,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -506,7 +524,7 @@ dependencies = [
  "proc-macro-error-attr2",
  "proc-macro2",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -554,24 +572,6 @@ name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
-
-[[package]]
-name = "rp2040-37c3-oled"
-version = "0.1.0"
-dependencies = [
- "cortex-m-rt",
- "defmt-rtt",
- "embedded-graphics",
- "embedded-hal 0.2.7",
- "embedded-hal 1.0.0",
- "fugit",
- "itoa",
- "nb 1.1.0",
- "panic-halt",
- "sh1106",
- "ssd1306",
- "waveshare-rp2040-zero",
-]
 
 [[package]]
 name = "rp2040-boot2"
@@ -708,9 +708,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.96"
+version = "2.0.97"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5d0adab1ae378d7f53bdebc67a39f1f151407ef230f0ce2883572f5d8985c80"
+checksum = "5dabd04e3b9a8c3c03d5e743f5ef5e1207befc9de704d477f7198cc28049763e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -734,7 +734,7 @@ checksum = "26afc1baea8a989337eeb52b6e72a039780ce45c3edfcc9c5b9d112feeb173c2"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.96",
+ "syn 2.0.97",
 ]
 
 [[package]]
@@ -745,9 +745,9 @@ checksum = "75b844d17643ee918803943289730bec8aac480150456169e647ed0b576ba539"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.14"
+version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adb9e6ca4f869e1180728b7950e35922a7fc6397f7b641499e8f3ef06e50dc83"
+checksum = "a210d160f08b701c8721ba1c726c11662f877ea6b7094007e1ca9a1041945034"
 
 [[package]]
 name = "usb-device"
