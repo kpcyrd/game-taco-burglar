@@ -2,6 +2,7 @@
 #![no_main]
 
 mod big;
+mod gfx;
 mod small;
 
 use defmt_rtt as _;
@@ -290,13 +291,19 @@ fn main() -> ! {
 
         // draw image
         let im = Image::new(raw, Point::new(0, 13));
+        /*
         im.draw(&mut small_display).unwrap();
         small_display.flush().unwrap();
+        */
 
+        gfx::lock::draw_front(&mut small_display);
+        small_display.flush().unwrap();
+
+        // draw big screen
         im.draw(&mut big_display).unwrap();
         let mut buf = itoa::Buffer::new();
         let buf = buf.format(ctr);
-        Text::new(&buf, Point::new(10, 10), style)
+        Text::new(buf, Point::new(10, 10), style)
             .draw(&mut big_display)
             .unwrap();
         big_display.flush().unwrap();
