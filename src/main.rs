@@ -184,6 +184,8 @@ const FRAMES: &[ImageRaw<BinaryColor>] = &[
     ImageRaw::new(include_bytes!("../video/frame150.raw"), 128),
 ];
 
+const TICK_THRESHOLD: i32 = 10;
+
 #[entry]
 fn main() -> ! {
     let mut pac = pac::Peripherals::take().unwrap();
@@ -248,6 +250,8 @@ fn main() -> ! {
 
     // enter loop
     let mut iter = [].iter();
+    let mut open = false;
+    let mut tick_counter = 0;
     loop {
         // get next frame or restart iterator
         let Some(raw) = iter.next() else {
@@ -296,7 +300,7 @@ fn main() -> ! {
         small_display.flush().unwrap();
         */
 
-        gfx::lock::draw_front(&mut small_display);
+        gfx::lock::draw_front(&mut small_display, open);
         small_display.flush().unwrap();
 
         // draw big screen
@@ -311,5 +315,12 @@ fn main() -> ! {
         // sleep for frame rate
         delay.start(50.millis());
         let _ = nb::block!(delay.wait());
+
+        // process the concept of tick
+        tick_counter += 1;
+        if tick_counter >= TICK_THRESHOLD {
+            open = !open;
+            tick_counter = 0;
+        }
     }
 }

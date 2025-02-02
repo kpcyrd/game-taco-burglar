@@ -14,16 +14,20 @@ const CIRLCE_DIAMETER: u32 = 40;
 const KEYHOLE_WIDTH: u32 = 10;
 const KEYHOLE_HEIGHT: u32 = 26;
 
+const KEYHOLE_OPEN_TWIST: i32 = 5;
+
 const PICK_LENGTH: i32 = 25;
 const PICK_KEYHOLE_OFFSET: i32 = 5;
 const PICK_WIDTH: u32 = 4;
 
 const LOCK_Y_OFFSET: i32 = 12;
 
-pub fn draw_front<D: DrawTarget<Color = BinaryColor>>(display: &mut D)
+pub fn draw_front<D: DrawTarget<Color = BinaryColor>>(display: &mut D, open: bool)
 where
     <D as DrawTarget>::Error: Debug,
 {
+    let twist = open.then_some(KEYHOLE_OPEN_TWIST).unwrap_or_default();
+
     // circle
     Circle::new(Point::new(44, LOCK_Y_OFFSET), 40)
         .into_styled(WHITE)
@@ -33,11 +37,11 @@ where
     // keyhole
     Line::new(
         Point::new(
-            gfx::line_tweak(gfx::centered(DISPLAY_WIDTH, 0)),
+            gfx::line_tweak(gfx::centered(DISPLAY_WIDTH, 0)) + twist,
             gfx::centered(CIRLCE_DIAMETER as i32, KEYHOLE_HEIGHT) + LOCK_Y_OFFSET,
         ),
         Point::new(
-            gfx::line_tweak(gfx::centered(DISPLAY_WIDTH, 0)),
+            gfx::line_tweak(gfx::centered(DISPLAY_WIDTH, 0)) - twist,
             gfx::line_tweak(
                 gfx::centered(CIRLCE_DIAMETER as i32, KEYHOLE_HEIGHT)
                     + LOCK_Y_OFFSET
@@ -52,11 +56,11 @@ where
     // pick
     Line::new(
         Point::new(
-            gfx::centered(DISPLAY_WIDTH, 0),
+            gfx::centered(DISPLAY_WIDTH, 0) - twist,
             gfx::centered(DISPLAY_HEIGHT, 0) + PICK_KEYHOLE_OFFSET,
         ),
         Point::new(
-            gfx::centered(DISPLAY_WIDTH, 0) + PICK_LENGTH,
+            gfx::centered(DISPLAY_WIDTH, 0) + PICK_LENGTH - (twist * 5),
             gfx::centered(DISPLAY_HEIGHT, 0) + PICK_LENGTH + PICK_KEYHOLE_OFFSET,
         ),
     )
