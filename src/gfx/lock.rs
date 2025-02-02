@@ -1,10 +1,10 @@
-use crate::gfx::{self, BLACK, WHITE};
+use crate::gfx::{self, WHITE};
 use core::fmt::Debug;
 use embedded_graphics::{
     draw_target::DrawTarget,
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{Circle, Line, PrimitiveStyle, Rectangle},
+    primitives::{Circle, Line},
 };
 
 const DISPLAY_WIDTH: i32 = 128;
@@ -31,14 +31,21 @@ where
         .unwrap();
 
     // keyhole
-    Rectangle::new(
+    Line::new(
         Point::new(
-            gfx::centered(DISPLAY_WIDTH, KEYHOLE_WIDTH),
+            gfx::line_tweak(gfx::centered(DISPLAY_WIDTH, 0)),
             gfx::centered(CIRLCE_DIAMETER as i32, KEYHOLE_HEIGHT) + LOCK_Y_OFFSET,
         ),
-        Size::new(KEYHOLE_WIDTH, KEYHOLE_HEIGHT),
+        Point::new(
+            gfx::line_tweak(gfx::centered(DISPLAY_WIDTH, 0)),
+            gfx::line_tweak(
+                gfx::centered(CIRLCE_DIAMETER as i32, KEYHOLE_HEIGHT)
+                    + LOCK_Y_OFFSET
+                    + KEYHOLE_HEIGHT as i32,
+            ),
+        ),
     )
-    .into_styled(BLACK)
+    .into_styled(gfx::black_stroke(KEYHOLE_WIDTH))
     .draw(display)
     .unwrap();
 
@@ -53,7 +60,7 @@ where
             gfx::centered(DISPLAY_HEIGHT, 0) + PICK_LENGTH + PICK_KEYHOLE_OFFSET,
         ),
     )
-    .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, PICK_WIDTH))
+    .into_styled(gfx::white_stroke(PICK_WIDTH))
     .draw(display)
     .unwrap();
 }
