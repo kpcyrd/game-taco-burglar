@@ -4,9 +4,10 @@ use embedded_graphics::{
     draw_target::DrawTarget,
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{Line, Rectangle},
+    primitives::Rectangle,
     text::{Baseline, Text},
 };
+use rand_core::RngCore;
 
 // small screen consts
 const MAP_POINT: Point = Point::new(
@@ -25,6 +26,16 @@ const MAP_Y: usize = 10;
 pub struct Map([[bool; MAP_X]; MAP_Y]);
 
 impl Map {
+    fn get(&self, x: usize, y: usize) -> bool {
+        let Some(row) = self.0.get(y) else {
+            return false;
+        };
+        let Some(cell) = row.get(x) else {
+            return false;
+        };
+        *cell
+    }
+
     fn above(&self, x: usize, y: usize) -> bool {
         let Some(y) = y.checked_sub(1) else {
             return false;
@@ -75,8 +86,6 @@ const MIDDLE_STRIP_LENGTH: u8 = 5;
 const MIDDLE_STRIP_GAP: u8 = 10;
 const MIDDLE_STRIP_STEP_SIZE: u8 = 3;
 const LANE_HEIGHT: u32 = 18;
-const LANE_BRANCH_WIDTH: u32 = LANE_HEIGHT * 2;
-const NEW_LANE_MAX: u32 = 128 + LANE_BRANCH_WIDTH;
 
 const BIKE_HEIGHT: u32 = 14;
 const BIKE_WIDTH: u32 = 24;
@@ -92,43 +101,50 @@ enum LineOrientation {
     Vertical,
 }
 
-pub enum LaneDirection {
-    Top,
-    Bottom,
-}
-
-pub struct Lane {
-    position: u8,
-    direction: Option<LaneDirection>,
-}
-
-impl Lane {
-    pub fn new(position: u8, direction: Option<LaneDirection>) -> Self {
-        Self {
-            position,
-            direction,
+fn random_valid_position<R: RngCore>(mut random: R) -> (usize, usize) {
+    loop {
+        let num = random.next_u32() as usize % (MAP_X * MAP_Y);
+        let y = num / MAP_X;
+        let x = num - (y * MAP_X);
+        if MAP.get(x, y) {
+            return (x, y);
         }
     }
 }
 
 pub struct TravelState {
     pub score: u32,
-    pub lanes: [Lane; NUM_LANES],
+    pub goal: (usize, usize),
+    pub player: (usize, usize),
     pub active_lane: u8,
     pub middle_strip: u8,
 }
 
 impl TravelState {
-    pub fn new() -> Self {
-        Self {
+    pub fn new<R: RngCore>(mut random: R) -> Self {
+        let mut state = Self {
             score: 1338,
-            lanes: [
-                Lane::new(54, Some(LaneDirection::Top)),
-                Lane::new(0, None),
-                Lane::new((NEW_LANE_MAX - 20) as u8, Some(LaneDirection::Bottom)),
-            ],
+            goal: (0, 0),
+            player: (0, 0),
             active_lane: 0,
             middle_strip: 0,
+        };
+        state.set_random_player(&mut random);
+        state.set_random_goal(&mut random);
+        state
+    }
+
+    pub fn set_random_player<R: RngCore>(&mut self, random: R) {
+        self.player = random_valid_position(random);
+    }
+
+    pub fn set_random_goal<R: RngCore>(&mut self, mut random: R) {
+        loop {
+            self.goal = random_valid_position(&mut random);
+            // we may have to get a new value if player is already there
+            if self.goal != self.player {
+                break;
+            }
         }
     }
 
@@ -236,6 +252,25 @@ impl TravelState {
 
                 let cell_point = MAP_POINT
                     + Point::new((x as u32 * CELL_SIZE) as i32, (y as u32 * CELL_SIZE) as i32);
+
+                if (x, y) == self.goal || (x, y) == self.player {
+                    // they both share this white rectangle
+                    Rectangle::new(cell_point + Point::new(1, 1), Size::new(3, 3))
+                        .into_styled(gfx::WHITE)
+                        .draw(display)
+                        .unwrap();
+                    // goal has a black dot in the middle
+                    if (x, y) == self.goal {
+                        Rectangle::new(
+                            cell_point + Point::new(SUB_CELL_SIZE as i32, SUB_CELL_SIZE as i32),
+                            Size::new(1, 1),
+                        )
+                        .into_styled(gfx::BLACK)
+                        .draw(display)
+                        .unwrap();
+                    }
+                    continue;
+                }
 
                 // render lines
                 if MAP.above(x, y) {

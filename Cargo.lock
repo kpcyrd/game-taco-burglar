@@ -338,6 +338,7 @@ dependencies = [
  "itoa",
  "nb 1.1.0",
  "panic-halt",
+ "rand_core",
  "sh1106",
  "ssd1306",
  "static_assertions",

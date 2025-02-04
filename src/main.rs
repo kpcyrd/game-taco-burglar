@@ -18,6 +18,7 @@ use waveshare_rp2040_zero::{
         clocks::{init_clocks_and_plls, Clock},
         i2c::I2C,
         pac,
+        rosc::RingOscillator,
         timer::Timer,
         watchdog::Watchdog,
         Sio,
@@ -47,6 +48,7 @@ fn main() -> ! {
 
     let timer = Timer::new(pac.TIMER, &mut pac.RESETS, &clocks);
     let mut delay = timer.count_down();
+    let mut rosc = RingOscillator::new(pac.ROSC).initialize();
 
     // Configure gpio
     let sio = Sio::new(pac.SIO);
@@ -90,7 +92,7 @@ fn main() -> ! {
 
     // enter loop
     // let mut lock_state = gfx::lock::LockState::new();
-    let mut travel_state = gfx::travel::TravelState::new();
+    let mut travel_state = gfx::travel::TravelState::new(&mut rosc);
     let mut tick_counter = 0;
     loop {
         while action_in_pin.is_low().unwrap() {
@@ -150,6 +152,7 @@ fn main() -> ! {
             */
             travel_state.score += 1;
             travel_state.active_lane = (travel_state.score % gfx::travel::NUM_LANES as u32) as u8;
+            travel_state.set_random_goal(&mut rosc);
             tick_counter = 0;
         }
         travel_state.tick();
