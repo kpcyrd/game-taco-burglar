@@ -73,7 +73,9 @@ const MAP: Map = Map([
 pub const NUM_LANES: usize = 3;
 const MIDDLE_STRIP_LENGTH: u8 = 5;
 const LANE_HEIGHT: u32 = 18;
-const LANE_EXTENSION_WIDTH: u32 = LANE_HEIGHT * 2;
+const LANE_BRANCH_WIDTH: u32 = LANE_HEIGHT * 2;
+const NEW_LANE_MAX: u32 = 128 + LANE_BRANCH_WIDTH;
+
 const BIKE_HEIGHT: u32 = 14;
 const BIKE_WIDTH: u32 = 24;
 const BIKE_Y_OFFSET: u32 = 3;
@@ -119,7 +121,7 @@ impl TravelState {
             lanes: [
                 Lane::new(54, Some(LaneDirection::Top)),
                 Lane::new(0, None),
-                Lane::new(96, Some(LaneDirection::Bottom)),
+                Lane::new((NEW_LANE_MAX - 20) as u8, Some(LaneDirection::Bottom)),
             ],
             active_lane: 0,
             middle_strip: 0,
@@ -159,7 +161,7 @@ impl TravelState {
                         Line::new(
                             lane_point
                                 + Point::new(
-                                    lane.position as i32 - LANE_EXTENSION_WIDTH as i32,
+                                    lane.position as i32 - LANE_BRANCH_WIDTH as i32,
                                     LANE_HEIGHT as i32,
                                 ),
                             lane_point + Point::new(lane.position as i32, 0),
@@ -174,22 +176,30 @@ impl TravelState {
                     let Some(previous) = previous else { continue };
 
                     if previous.position > 0 {
-                        Rectangle::new(
-                            lane_point + Point::new(LANE_EXTENSION_WIDTH as i32 * -1, 0),
-                            Size::new(previous.position as u32, 1),
-                        )
-                        .into_styled(gfx::WHITE)
-                        .draw(display)
-                        .unwrap();
+                        let branch_start =
+                            lane_point + Point::new(LANE_BRANCH_WIDTH as i32 * -1, 0);
+
+                        Rectangle::new(branch_start, Size::new(previous.position as u32, 1))
+                            .into_styled(gfx::WHITE)
+                            .draw(display)
+                            .unwrap();
                     }
                 }
                 Some(LaneDirection::Bottom) => {
                     if lane.position > 0 {
-                        Rectangle::new(
-                            lane_point, // + Point::new(gfx::DISPLAY_WIDTH - lane.position as i32, 0),
-                            Size::new(lane.position as u32, 1),
+                        let branch_start =
+                            lane_point + Point::new(LANE_BRANCH_WIDTH as i32 * -1, 0);
+
+                        Rectangle::new(branch_start, Size::new(lane.position as u32, 1))
+                            .into_styled(gfx::WHITE)
+                            .draw(display)
+                            .unwrap();
+
+                        Line::new(
+                            branch_start + Point::new(lane.position as i32, 0),
+                            lane_point + Point::new(lane.position as i32, LANE_HEIGHT as i32),
                         )
-                        .into_styled(gfx::WHITE)
+                        .into_styled(gfx::white_stroke(1))
                         .draw(display)
                         .unwrap();
                     }
