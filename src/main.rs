@@ -12,7 +12,6 @@ use embedded_hal::digital::InputPin;
 use fugit::ExtU32;
 use fugit::RateExtU32;
 use panic_halt as _;
-use rand_core::RngCore;
 use waveshare_rp2040_zero::entry;
 use waveshare_rp2040_zero::{
     hal::{
@@ -89,7 +88,6 @@ fn main() -> ! {
 
     // game state
     let mut last_state = false;
-    // let mut ctr = 0;
 
     // enter loop
     // let mut lock_state = gfx::lock::LockState::new();
@@ -108,7 +106,7 @@ fn main() -> ! {
 
         while up_in_pin.is_low().unwrap() {
             if !last_state {
-                // ctr = 100;
+                travel_state.button_up();
                 last_state = true;
             }
             delay.start(50.millis());
@@ -118,7 +116,7 @@ fn main() -> ! {
 
         while down_in_pin.is_low().unwrap() {
             if !last_state {
-                // ctr = 0;
+                travel_state.button_down();
                 last_state = true;
             }
             delay.start(50.millis());
@@ -152,8 +150,6 @@ fn main() -> ! {
             lock_state.score += 1;
             */
 
-            // auto-select lane until inputs are possible
-            travel_state.active_lane = (rosc.next_u32() % gfx::travel::NUM_LANES as u32) as u8;
             tick_counter = 0;
         }
         travel_state.tick(&mut rosc);

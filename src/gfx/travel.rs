@@ -89,7 +89,7 @@ const MAP: Map = Map([
 ]);
 
 // big screen consts
-pub const NUM_LANES: usize = 3;
+pub const NUM_LANES: u8 = 3;
 const MIDDLE_STRIP_LENGTH: u8 = 5;
 const MIDDLE_STRIP_GAP: u8 = 10;
 const MIDDLE_STRIP_STEP_SIZE: u8 = 3;
@@ -161,7 +161,7 @@ pub struct TravelState {
     player: (usize, usize),
     direction: Direction,
     next_square: u8,
-    pub active_lane: u8,
+    active_lane: u8,
     middle_strip: u8,
 }
 
@@ -229,6 +229,14 @@ impl TravelState {
             // else, always do two clockwise to turn around
             self.direction = self.direction.turn_clockwise().turn_clockwise();
         }
+    }
+
+    pub fn button_up(&mut self) {
+        self.active_lane = self.active_lane.saturating_sub(1);
+    }
+
+    pub fn button_down(&mut self) {
+        self.active_lane = (self.active_lane + 1) % NUM_LANES;
     }
 
     pub fn tick<R: RngCore>(&mut self, random: R) {
