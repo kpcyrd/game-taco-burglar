@@ -1,4 +1,6 @@
-use crate::gfx::{self, WHITE};
+#![allow(dead_code)]
+
+use crate::gfx;
 use core::fmt::Debug;
 use embedded_graphics::{
     draw_target::DrawTarget,
@@ -197,7 +199,7 @@ impl LockState {
 
         // circle
         Circle::new(Point::new(44, KEYHOLE_Y_OFFSET), 40)
-            .into_styled(WHITE)
+            .into_styled(gfx::WHITE)
             .draw(display)
             .unwrap();
 

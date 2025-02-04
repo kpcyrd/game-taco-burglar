@@ -1,4 +1,5 @@
 pub mod lock;
+pub mod travel;
 
 use embedded_graphics::{
     mono_font::{ascii, MonoTextStyle, MonoTextStyleBuilder},

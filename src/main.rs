@@ -89,7 +89,8 @@ fn main() -> ! {
     // let mut ctr = 0;
 
     // enter loop
-    let mut lock_state = gfx::lock::LockState::new();
+    // let mut lock_state = gfx::lock::LockState::new();
+    let mut travel_state = gfx::travel::TravelState::new();
     let mut tick_counter = 0;
     loop {
         while action_in_pin.is_low().unwrap() {
@@ -127,12 +128,13 @@ fn main() -> ! {
         big_display.clear();
 
         // render small screen
-        lock_state.draw_small_screen(&mut small_display);
+        // lock_state.draw_small_screen(&mut small_display);
+        travel_state.draw_small_screen(&mut small_display);
         small_display.flush().unwrap();
 
         // render big screen
-        // im.draw(&mut big_display).unwrap();
-        lock_state.draw_big_screen(&mut big_display);
+        // lock_state.draw_big_screen(&mut big_display);
+        travel_state.draw_big_screen(&mut big_display);
         big_display.flush().unwrap();
 
         // sleep for frame rate
@@ -142,8 +144,11 @@ fn main() -> ! {
         // process the concept of tick
         tick_counter += 1;
         if tick_counter >= TICK_THRESHOLD {
+            /*
             lock_state.open = !lock_state.open;
             lock_state.score += 1;
+            */
+            travel_state.score += 1;
             tick_counter = 0;
         }
     }
