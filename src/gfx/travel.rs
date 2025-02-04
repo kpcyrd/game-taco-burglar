@@ -36,32 +36,43 @@ impl Map {
         *cell
     }
 
-    fn above(&self, x: usize, y: usize) -> bool {
+    fn above(&self, x: usize, y: usize) -> Option<(usize, usize)> {
         let Some(y) = y.checked_sub(1) else {
-            return false;
+            return None;
         };
-        self.0[y][x]
+        self.0[y][x].then_some((x, y))
     }
 
-    fn below(&self, x: usize, y: usize) -> bool {
-        let Some(row) = self.0.get(y + 1) else {
-            return false;
+    fn below(&self, x: usize, y: usize) -> Option<(usize, usize)> {
+        let y = y + 1;
+        let Some(row) = self.0.get(y) else {
+            return None;
         };
-        row[x]
+        row[x].then_some((x, y))
     }
 
-    fn left(&self, x: usize, y: usize) -> bool {
+    fn left(&self, x: usize, y: usize) -> Option<(usize, usize)> {
         let Some(x) = x.checked_sub(1) else {
-            return false;
+            return None;
         };
-        self.0[y][x]
+        self.0[y][x].then_some((x, y))
     }
 
-    fn right(&self, x: usize, y: usize) -> bool {
-        let Some(cell) = self.0[y].get(x + 1) else {
-            return false;
+    fn right(&self, x: usize, y: usize) -> Option<(usize, usize)> {
+        let x = x + 1;
+        let Some(cell) = self.0[y].get(x) else {
+            return None;
         };
-        *cell
+        cell.then_some((x, y))
+    }
+
+    fn direction(&self, x: usize, y: usize, direction: Direction) -> Option<(usize, usize)> {
+        match direction {
+            Direction::North => MAP.above(x, y),
+            Direction::East => MAP.right(x, y),
+            Direction::South => MAP.below(x, y),
+            Direction::West => MAP.left(x, y),
+        }
     }
 }
 
@@ -96,6 +107,43 @@ const SECOND_LANE_TOP_OFFSET: i32 = FIRST_LANE_TOP_OFFSET + (LANE_HEIGHT as i32 
 const THIRD_LANE_TOP_OFFSET: i32 = SECOND_LANE_TOP_OFFSET + (LANE_HEIGHT as i32 + 1);
 const BIKE_LEFT_OFFSET: i32 = 15;
 
+#[derive(Clone, Copy)]
+pub enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
+impl Direction {
+    fn turn_clockwise(&self) -> Self {
+        match self {
+            Direction::North => Direction::East,
+            Direction::East => Direction::South,
+            Direction::South => Direction::West,
+            Direction::West => Direction::North,
+        }
+    }
+
+    fn turn_counter_clockwise(&self) -> Self {
+        match self {
+            Direction::North => Direction::West,
+            Direction::East => Direction::North,
+            Direction::South => Direction::East,
+            Direction::West => Direction::South,
+        }
+    }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            Direction::North => "north",
+            Direction::East => "east",
+            Direction::South => "south",
+            Direction::West => "west",
+        }
+    }
+}
+
 enum LineOrientation {
     Horizontal,
     Vertical,
@@ -116,6 +164,7 @@ pub struct TravelState {
     pub score: u32,
     pub goal: (usize, usize),
     pub player: (usize, usize),
+    pub direction: Direction,
     pub active_lane: u8,
     pub middle_strip: u8,
 }
@@ -126,7 +175,8 @@ impl TravelState {
             score: 1338,
             goal: (0, 0),
             player: (0, 0),
-            active_lane: 0,
+            direction: Direction::North,
+            active_lane: 1,
             middle_strip: 0,
         };
         state.set_random_player(&mut random);
@@ -148,10 +198,63 @@ impl TravelState {
         }
     }
 
-    pub fn tick(&mut self) {
+    // try to turn in the selected direction, if possible
+    fn try_turn(&mut self, new_direction: Direction) {
+        let (x, y) = self.player;
+        if MAP.direction(x, y, new_direction).is_some() {
+            self.direction = new_direction;
+        }
+    }
+
+    fn drive(&mut self) {
+        loop {
+            let (x, y) = self.player;
+            // check if we can drive that way
+            if let Some(pos) = MAP.direction(x, y, self.direction) {
+                self.player = pos;
+                break;
+            }
+
+            // the loop didn't break, check if we can do a clockwise turn
+            let new_direction = self.direction.turn_clockwise();
+            if MAP.direction(x, y, new_direction).is_some() {
+                self.direction = new_direction;
+                break;
+            }
+
+            // else, check if we can do a counter clockwise turn
+            let new_direction = self.direction.turn_counter_clockwise();
+            if MAP.direction(x, y, new_direction).is_some() {
+                self.direction = new_direction;
+                break;
+            }
+
+            // else, always do two clockwise to turn around
+            self.direction = self.direction.turn_clockwise().turn_clockwise();
+        }
+    }
+
+    pub fn tick<R: RngCore>(&mut self, random: R) {
         self.middle_strip += MIDDLE_STRIP_STEP_SIZE;
         self.middle_strip %= MIDDLE_STRIP_LENGTH + MIDDLE_STRIP_GAP;
+
+        // do turn
+        self.try_turn(match self.active_lane {
+            0 => self.direction.turn_counter_clockwise(),
+            2 => self.direction.turn_clockwise(),
+            _ => self.direction,
+        });
+
+        // drive in current direction
+        self.drive();
+
+        if self.player == self.goal {
+            self.score += 1;
+            self.set_random_goal(random);
+        }
     }
+
+    // render code
 
     pub fn draw_lane<D: DrawTarget<Color = BinaryColor>>(&self, display: &mut D, y: i32, full: bool)
     where
@@ -217,6 +320,16 @@ impl TravelState {
         )
         .draw(display)
         .unwrap();
+
+        // render direction
+        Text::with_baseline(
+            self.direction.as_str(),
+            Point::new(0, 0),
+            gfx::TEXT_STYLE,
+            Baseline::Top,
+        )
+        .draw(display)
+        .unwrap();
     }
 
     #[inline]
@@ -273,7 +386,7 @@ impl TravelState {
                 }
 
                 // render lines
-                if MAP.above(x, y) {
+                if MAP.above(x, y).is_some() {
                     Self::draw_cell_line(
                         display,
                         cell_point,
@@ -283,7 +396,7 @@ impl TravelState {
                     );
                 }
 
-                if MAP.below(x, y) {
+                if MAP.below(x, y).is_some() {
                     Self::draw_cell_line(
                         display,
                         cell_point,
@@ -293,7 +406,7 @@ impl TravelState {
                     );
                 }
 
-                if MAP.left(x, y) {
+                if MAP.left(x, y).is_some() {
                     Self::draw_cell_line(
                         display,
                         cell_point,
@@ -303,7 +416,7 @@ impl TravelState {
                     );
                 }
 
-                if MAP.right(x, y) {
+                if MAP.right(x, y).is_some() {
                     Self::draw_cell_line(
                         display,
                         cell_point,

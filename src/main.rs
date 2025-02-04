@@ -12,6 +12,7 @@ use embedded_hal::digital::InputPin;
 use fugit::ExtU32;
 use fugit::RateExtU32;
 use panic_halt as _;
+use rand_core::RngCore;
 use waveshare_rp2040_zero::entry;
 use waveshare_rp2040_zero::{
     hal::{
@@ -150,11 +151,11 @@ fn main() -> ! {
             lock_state.open = !lock_state.open;
             lock_state.score += 1;
             */
-            travel_state.score += 1;
-            travel_state.active_lane = (travel_state.score % gfx::travel::NUM_LANES as u32) as u8;
-            travel_state.set_random_goal(&mut rosc);
+
+            // auto-select lane until inputs are possible
+            travel_state.active_lane = (rosc.next_u32() % gfx::travel::NUM_LANES as u32) as u8;
             tick_counter = 0;
         }
-        travel_state.tick();
+        travel_state.tick(&mut rosc);
     }
 }
