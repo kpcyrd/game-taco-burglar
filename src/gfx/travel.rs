@@ -18,6 +18,8 @@ const MAP_POINT: Point = Point::new(
     gfx::centered(gfx::DISPLAY_HEIGHT, CELL_SIZE * MAP_Y as u32),
 );
 
+const TICKS_PER_TRAVEL_SQUARE: u8 = 6;
+
 const CELL_SIZE: u32 = 5;
 const SUB_CELL_SIZE: u32 = 2;
 static_assertions::const_assert!(CELL_SIZE == SUB_CELL_SIZE * 2 + 1);
@@ -155,11 +157,12 @@ fn random_valid_position<R: RngCore>(mut random: R) -> (usize, usize) {
 
 pub struct TravelState {
     pub score: u32,
-    pub goal: (usize, usize),
-    pub player: (usize, usize),
-    pub direction: Direction,
+    goal: (usize, usize),
+    player: (usize, usize),
+    direction: Direction,
+    next_square: u8,
     pub active_lane: u8,
-    pub middle_strip: u8,
+    middle_strip: u8,
 }
 
 impl TravelState {
@@ -169,6 +172,7 @@ impl TravelState {
             goal: (0, 0),
             player: (0, 0),
             direction: Direction::North,
+            next_square: TICKS_PER_TRAVEL_SQUARE,
             active_lane: 1,
             middle_strip: 0,
         };
@@ -228,22 +232,30 @@ impl TravelState {
     }
 
     pub fn tick<R: RngCore>(&mut self, random: R) {
+        // run animation
         self.middle_strip += MIDDLE_STRIP_STEP_SIZE;
         self.middle_strip %= MIDDLE_STRIP_LENGTH + MIDDLE_STRIP_GAP;
 
-        // do turn
-        self.try_turn(match self.active_lane {
-            0 => self.direction.turn_counter_clockwise(),
-            2 => self.direction.turn_clockwise(),
-            _ => self.direction,
-        });
+        // check if next square is reached
+        self.next_square = self.next_square.saturating_sub(1);
+        if self.next_square == 0 {
+            // reset counter
+            self.next_square = TICKS_PER_TRAVEL_SQUARE;
 
-        // drive in current direction
-        self.drive();
+            // do turn
+            self.try_turn(match self.active_lane {
+                0 => self.direction.turn_counter_clockwise(),
+                2 => self.direction.turn_clockwise(),
+                _ => self.direction,
+            });
 
-        if self.player == self.goal {
-            self.score += 1;
-            self.set_random_goal(random);
+            // drive in current direction
+            self.drive();
+
+            if self.player == self.goal {
+                self.score += 1;
+                self.set_random_goal(random);
+            }
         }
     }
 
