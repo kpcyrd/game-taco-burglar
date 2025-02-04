@@ -72,6 +72,8 @@ const MAP: Map = Map([
 // big screen consts
 pub const NUM_LANES: usize = 3;
 const MIDDLE_STRIP_LENGTH: u8 = 5;
+const MIDDLE_STRIP_GAP: u8 = 10;
+const MIDDLE_STRIP_STEP_SIZE: u8 = 3;
 const LANE_HEIGHT: u32 = 18;
 const LANE_BRANCH_WIDTH: u32 = LANE_HEIGHT * 2;
 const NEW_LANE_MAX: u32 = 128 + LANE_BRANCH_WIDTH;
@@ -81,6 +83,8 @@ const BIKE_WIDTH: u32 = 24;
 const BIKE_Y_OFFSET: u32 = 3;
 const FIRST_LANE_TOP_OFFSET: i32 =
     gfx::DISPLAY_HEIGHT - (LANE_HEIGHT as i32 + 1) * NUM_LANES as i32;
+const SECOND_LANE_TOP_OFFSET: i32 = FIRST_LANE_TOP_OFFSET + (LANE_HEIGHT as i32 + 1);
+const THIRD_LANE_TOP_OFFSET: i32 = SECOND_LANE_TOP_OFFSET + (LANE_HEIGHT as i32 + 1);
 const BIKE_LEFT_OFFSET: i32 = 15;
 
 enum LineOrientation {
@@ -129,93 +133,62 @@ impl TravelState {
     }
 
     pub fn tick(&mut self) {
-        self.middle_strip += 1;
-        self.middle_strip %= MIDDLE_STRIP_LENGTH;
+        self.middle_strip += MIDDLE_STRIP_STEP_SIZE;
+        self.middle_strip %= MIDDLE_STRIP_LENGTH + MIDDLE_STRIP_GAP;
+    }
+
+    pub fn draw_lane<D: DrawTarget<Color = BinaryColor>>(&self, display: &mut D, y: i32, full: bool)
+    where
+        <D as DrawTarget>::Error: Debug,
+    {
+        let lane_point = Point::new(0, y);
+
+        if full {
+            Rectangle::new(lane_point, Size::new(gfx::DISPLAY_WIDTH as u32, 1))
+                .into_styled(gfx::WHITE)
+                .draw(display)
+                .unwrap();
+        } else {
+            let mut x = -(self.middle_strip as i32);
+            while x < gfx::DISPLAY_WIDTH {
+                // render current strip
+                Rectangle::new(
+                    lane_point + Point::new(x, 0),
+                    Size::new(MIDDLE_STRIP_LENGTH as u32, 1),
+                )
+                .into_styled(gfx::WHITE)
+                .draw(display)
+                .unwrap();
+
+                // add rendered strip
+                x += MIDDLE_STRIP_LENGTH as i32;
+                // gap
+                x += MIDDLE_STRIP_GAP as i32;
+            }
+        }
     }
 
     pub fn draw_big_screen<D: DrawTarget<Color = BinaryColor>>(&self, display: &mut D)
     where
         <D as DrawTarget>::Error: Debug,
     {
-        // lane rendering
-        for num in 0..self.lanes.len() {
-            let lane = &self.lanes[num];
-            let previous = num.checked_sub(1).map(|i| &self.lanes[i]);
+        self.draw_lane(display, FIRST_LANE_TOP_OFFSET, true);
+        self.draw_lane(display, SECOND_LANE_TOP_OFFSET, false);
+        self.draw_lane(display, THIRD_LANE_TOP_OFFSET, false);
 
-            let lane_point = Point::new(
-                0,
-                FIRST_LANE_TOP_OFFSET + ((LANE_HEIGHT as i32 + 1) * num as i32),
-            );
+        let bike_point = Point::new(
+            BIKE_LEFT_OFFSET,
+            match self.active_lane {
+                0 => FIRST_LANE_TOP_OFFSET,
+                1 => SECOND_LANE_TOP_OFFSET,
+                _ => THIRD_LANE_TOP_OFFSET,
+            } + BIKE_Y_OFFSET as i32,
+        );
 
-            match lane.direction {
-                Some(LaneDirection::Top) => {
-                    Rectangle::new(
-                        lane_point + Point::new(lane.position as i32, 0),
-                        Size::new(gfx::DISPLAY_WIDTH as u32, 1),
-                    )
-                    .into_styled(gfx::WHITE)
-                    .draw(display)
-                    .unwrap();
-
-                    if lane.position > 0 {
-                        Line::new(
-                            lane_point
-                                + Point::new(
-                                    lane.position as i32 - LANE_BRANCH_WIDTH as i32,
-                                    LANE_HEIGHT as i32,
-                                ),
-                            lane_point + Point::new(lane.position as i32, 0),
-                        )
-                        .into_styled(gfx::white_stroke(1))
-                        .draw(display)
-                        .unwrap();
-                    }
-                }
-                None => {
-                    // this should always be true
-                    let Some(previous) = previous else { continue };
-
-                    if previous.position > 0 {
-                        let branch_start =
-                            lane_point + Point::new(LANE_BRANCH_WIDTH as i32 * -1, 0);
-
-                        Rectangle::new(branch_start, Size::new(previous.position as u32, 1))
-                            .into_styled(gfx::WHITE)
-                            .draw(display)
-                            .unwrap();
-                    }
-                }
-                Some(LaneDirection::Bottom) => {
-                    if lane.position > 0 {
-                        let branch_start =
-                            lane_point + Point::new(LANE_BRANCH_WIDTH as i32 * -1, 0);
-
-                        Rectangle::new(branch_start, Size::new(lane.position as u32, 1))
-                            .into_styled(gfx::WHITE)
-                            .draw(display)
-                            .unwrap();
-
-                        Line::new(
-                            branch_start + Point::new(lane.position as i32, 0),
-                            lane_point + Point::new(lane.position as i32, LANE_HEIGHT as i32),
-                        )
-                        .into_styled(gfx::white_stroke(1))
-                        .draw(display)
-                        .unwrap();
-                    }
-                }
-            }
-
-            if num as u8 == self.active_lane {
-                Rectangle::new(
-                    lane_point + Point::new(BIKE_LEFT_OFFSET, BIKE_Y_OFFSET as i32),
-                    Size::new(BIKE_WIDTH, BIKE_HEIGHT),
-                )
-                .into_styled(gfx::WHITE)
-                .draw(display)
-                .unwrap();
-            }
-        }
+        Rectangle::new(bike_point, Size::new(BIKE_WIDTH, BIKE_HEIGHT))
+            .into_styled(gfx::WHITE)
+            .draw(display)
+            .unwrap();
 
         // render score
         let mut buf = itoa::Buffer::new();
