@@ -2,12 +2,15 @@ use crate::gfx;
 use core::fmt::Debug;
 use embedded_graphics::{
     draw_target::DrawTarget,
+    image::{Image, ImageRaw},
     pixelcolor::BinaryColor,
     prelude::*,
     primitives::Rectangle,
     text::{Baseline, Text},
 };
 use rand_core::RngCore;
+
+const BIKE: ImageRaw<BinaryColor> = ImageRaw::new(include_bytes!("../../video/bike.raw"), 24);
 
 // small screen consts
 const MAP_POINT: Point = Point::new(
@@ -98,14 +101,12 @@ const MIDDLE_STRIP_GAP: u8 = 10;
 const MIDDLE_STRIP_STEP_SIZE: u8 = 3;
 const LANE_HEIGHT: u32 = 18;
 
-const BIKE_HEIGHT: u32 = 14;
-const BIKE_WIDTH: u32 = 24;
 const BIKE_Y_OFFSET: u32 = 3;
 const FIRST_LANE_TOP_OFFSET: i32 =
     gfx::DISPLAY_HEIGHT - (LANE_HEIGHT as i32 + 1) * NUM_LANES as i32;
 const SECOND_LANE_TOP_OFFSET: i32 = FIRST_LANE_TOP_OFFSET + (LANE_HEIGHT as i32 + 1);
 const THIRD_LANE_TOP_OFFSET: i32 = SECOND_LANE_TOP_OFFSET + (LANE_HEIGHT as i32 + 1);
-const BIKE_LEFT_OFFSET: i32 = 15;
+const BIKE_LEFT_OFFSET: i32 = 13;
 
 #[derive(Clone, Copy)]
 pub enum Direction {
@@ -291,10 +292,12 @@ impl TravelState {
     where
         <D as DrawTarget>::Error: Debug,
     {
+        // render lanes
         self.draw_lane(display, FIRST_LANE_TOP_OFFSET, true);
         self.draw_lane(display, SECOND_LANE_TOP_OFFSET, false);
         self.draw_lane(display, THIRD_LANE_TOP_OFFSET, false);
 
+        // render bike
         let bike_point = Point::new(
             BIKE_LEFT_OFFSET,
             match self.active_lane {
@@ -303,11 +306,7 @@ impl TravelState {
                 _ => THIRD_LANE_TOP_OFFSET,
             } + BIKE_Y_OFFSET as i32,
         );
-
-        Rectangle::new(bike_point, Size::new(BIKE_WIDTH, BIKE_HEIGHT))
-            .into_styled(gfx::WHITE)
-            .draw(display)
-            .unwrap();
+        Image::new(&BIKE, bike_point).draw(display).unwrap();
 
         // render score
         let mut buf = itoa::Buffer::new();
