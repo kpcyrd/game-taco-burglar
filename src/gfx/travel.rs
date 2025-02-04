@@ -73,6 +73,7 @@ const MAP: Map = Map([
 pub const NUM_LANES: usize = 3;
 const MIDDLE_STRIP_LENGTH: u8 = 5;
 const LANE_HEIGHT: u32 = 18;
+const LANE_EXTENSION_WIDTH: u32 = LANE_HEIGHT * 2;
 const BIKE_HEIGHT: u32 = 14;
 const BIKE_WIDTH: u32 = 24;
 const BIKE_Y_OFFSET: u32 = 3;
@@ -116,7 +117,7 @@ impl TravelState {
         Self {
             score: 1338,
             lanes: [
-                Lane::new(64, Some(LaneDirection::Top)),
+                Lane::new(54, Some(LaneDirection::Top)),
                 Lane::new(0, None),
                 Lane::new(96, Some(LaneDirection::Bottom)),
             ],
@@ -135,7 +136,10 @@ impl TravelState {
         <D as DrawTarget>::Error: Debug,
     {
         // lane rendering
-        for (num, lane) in self.lanes.iter().enumerate() {
+        for num in 0..self.lanes.len() {
+            let lane = &self.lanes[num];
+            let previous = num.checked_sub(1).map(|i| &self.lanes[i]);
+
             let lane_point = Point::new(
                 0,
                 FIRST_LANE_TOP_OFFSET + ((LANE_HEIGHT as i32 + 1) * num as i32),
@@ -151,26 +155,33 @@ impl TravelState {
                     .draw(display)
                     .unwrap();
 
-                    Line::new(
-                        lane_point
-                            + Point::new(
-                                lane.position as i32 - (LANE_HEIGHT as i32 * 2),
-                                LANE_HEIGHT as i32,
-                            ),
-                        lane_point + Point::new(lane.position as i32, 0),
-                    )
-                    .into_styled(gfx::white_stroke(1))
-                    .draw(display)
-                    .unwrap();
+                    if lane.position > 0 {
+                        Line::new(
+                            lane_point
+                                + Point::new(
+                                    lane.position as i32 - LANE_EXTENSION_WIDTH as i32,
+                                    LANE_HEIGHT as i32,
+                                ),
+                            lane_point + Point::new(lane.position as i32, 0),
+                        )
+                        .into_styled(gfx::white_stroke(1))
+                        .draw(display)
+                        .unwrap();
+                    }
                 }
                 None => {
-                    Rectangle::new(
-                        lane_point + Point::new(lane.position as i32, 0),
-                        Size::new(gfx::DISPLAY_WIDTH as u32, 1),
-                    )
-                    .into_styled(gfx::WHITE)
-                    .draw(display)
-                    .unwrap();
+                    // this should always be true
+                    let Some(previous) = previous else { continue };
+
+                    if previous.position > 0 {
+                        Rectangle::new(
+                            lane_point + Point::new(LANE_EXTENSION_WIDTH as i32 * -1, 0),
+                            Size::new(previous.position as u32, 1),
+                        )
+                        .into_styled(gfx::WHITE)
+                        .draw(display)
+                        .unwrap();
+                    }
                 }
                 Some(LaneDirection::Bottom) => {
                     if lane.position > 0 {
