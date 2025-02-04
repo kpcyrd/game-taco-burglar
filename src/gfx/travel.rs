@@ -8,6 +8,7 @@ use embedded_graphics::{
     text::{Baseline, Text},
 };
 
+// small screen consts
 const MAP_POINT: Point = Point::new(
     gfx::centered(gfx::DISPLAY_WIDTH, CELL_SIZE * MAP_X as u32),
     gfx::centered(gfx::DISPLAY_HEIGHT, CELL_SIZE * MAP_Y as u32),
@@ -68,6 +69,17 @@ const MAP: Map = Map([
     [O, X, X, X, X, X, O, O, O, X, X, X, X, X, X],
 ]);
 
+// big screen consts
+pub const NUM_LANES: usize = 3;
+const MIDDLE_STRIP_LENGTH: u8 = 5;
+const LANE_HEIGHT: u32 = 18;
+const BIKE_HEIGHT: u32 = 14;
+const BIKE_WIDTH: u32 = 24;
+const BIKE_Y_OFFSET: u32 = 3;
+const FIRST_LANE_TOP_OFFSET: i32 =
+    gfx::DISPLAY_HEIGHT - (LANE_HEIGHT as i32 + 1) * NUM_LANES as i32;
+const BIKE_LEFT_OFFSET: i32 = 15;
+
 enum LineOrientation {
     Horizontal,
     Vertical,
@@ -75,18 +87,51 @@ enum LineOrientation {
 
 pub struct TravelState {
     pub score: u32,
+    pub lanes: [u8; NUM_LANES],
+    pub active_lane: u8,
+    pub middle_strip: u8,
 }
 
 impl TravelState {
     pub fn new() -> Self {
-        Self { score: 1338 }
+        Self {
+            score: 1338,
+            lanes: [64, 128, 32],
+            active_lane: 1,
+            middle_strip: 0,
+        }
+    }
+
+    pub fn tick(&mut self) {
+        self.middle_strip += 1;
+        self.middle_strip %= MIDDLE_STRIP_LENGTH;
     }
 
     pub fn draw_big_screen<D: DrawTarget<Color = BinaryColor>>(&self, display: &mut D)
     where
         <D as DrawTarget>::Error: Debug,
     {
-        // TODO
+        // lane rendering
+        for (num, lane) in self.lanes.iter().enumerate() {
+            let lane_point = Point::new(
+                0,
+                FIRST_LANE_TOP_OFFSET + ((LANE_HEIGHT as i32 + 1) * num as i32),
+            );
+            Rectangle::new(lane_point, Size::new(gfx::DISPLAY_WIDTH as u32, 1))
+                .into_styled(gfx::WHITE)
+                .draw(display)
+                .unwrap();
+
+            if num as u8 == self.active_lane {
+                Rectangle::new(
+                    lane_point + Point::new(BIKE_LEFT_OFFSET, BIKE_Y_OFFSET as i32),
+                    Size::new(BIKE_WIDTH, BIKE_HEIGHT),
+                )
+                .into_styled(gfx::WHITE)
+                .draw(display)
+                .unwrap();
+            }
+        }
 
         // render score
         let mut buf = itoa::Buffer::new();

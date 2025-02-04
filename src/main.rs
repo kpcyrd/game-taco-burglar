@@ -149,7 +149,9 @@ fn main() -> ! {
             lock_state.score += 1;
             */
             travel_state.score += 1;
+            travel_state.active_lane = (travel_state.score % gfx::travel::NUM_LANES as u32) as u8;
             tick_counter = 0;
         }
+        travel_state.tick();
     }
 }
