@@ -4,7 +4,7 @@ use embedded_graphics::{
     draw_target::DrawTarget,
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{Circle, Line, Rectangle, RoundedRectangle},
+    primitives::{Line, Rectangle},
     text::{Baseline, Text},
 };
 
@@ -85,9 +85,28 @@ enum LineOrientation {
     Vertical,
 }
 
+pub enum LaneDirection {
+    Top,
+    Bottom,
+}
+
+pub struct Lane {
+    position: u8,
+    direction: Option<LaneDirection>,
+}
+
+impl Lane {
+    pub fn new(position: u8, direction: Option<LaneDirection>) -> Self {
+        Self {
+            position,
+            direction,
+        }
+    }
+}
+
 pub struct TravelState {
     pub score: u32,
-    pub lanes: [u8; NUM_LANES],
+    pub lanes: [Lane; NUM_LANES],
     pub active_lane: u8,
     pub middle_strip: u8,
 }
@@ -96,8 +115,12 @@ impl TravelState {
     pub fn new() -> Self {
         Self {
             score: 1338,
-            lanes: [64, 128, 32],
-            active_lane: 1,
+            lanes: [
+                Lane::new(64, Some(LaneDirection::Top)),
+                Lane::new(0, None),
+                Lane::new(96, Some(LaneDirection::Bottom)),
+            ],
+            active_lane: 0,
             middle_strip: 0,
         }
     }
@@ -117,10 +140,50 @@ impl TravelState {
                 0,
                 FIRST_LANE_TOP_OFFSET + ((LANE_HEIGHT as i32 + 1) * num as i32),
             );
-            Rectangle::new(lane_point, Size::new(gfx::DISPLAY_WIDTH as u32, 1))
-                .into_styled(gfx::WHITE)
-                .draw(display)
-                .unwrap();
+
+            match lane.direction {
+                Some(LaneDirection::Top) => {
+                    Rectangle::new(
+                        lane_point + Point::new(lane.position as i32, 0),
+                        Size::new(gfx::DISPLAY_WIDTH as u32, 1),
+                    )
+                    .into_styled(gfx::WHITE)
+                    .draw(display)
+                    .unwrap();
+
+                    Line::new(
+                        lane_point
+                            + Point::new(
+                                lane.position as i32 - (LANE_HEIGHT as i32 * 2),
+                                LANE_HEIGHT as i32,
+                            ),
+                        lane_point + Point::new(lane.position as i32, 0),
+                    )
+                    .into_styled(gfx::white_stroke(1))
+                    .draw(display)
+                    .unwrap();
+                }
+                None => {
+                    Rectangle::new(
+                        lane_point + Point::new(lane.position as i32, 0),
+                        Size::new(gfx::DISPLAY_WIDTH as u32, 1),
+                    )
+                    .into_styled(gfx::WHITE)
+                    .draw(display)
+                    .unwrap();
+                }
+                Some(LaneDirection::Bottom) => {
+                    if lane.position > 0 {
+                        Rectangle::new(
+                            lane_point, // + Point::new(gfx::DISPLAY_WIDTH - lane.position as i32, 0),
+                            Size::new(lane.position as u32, 1),
+                        )
+                        .into_styled(gfx::WHITE)
+                        .draw(display)
+                        .unwrap();
+                    }
+                }
+            }
 
             if num as u8 == self.active_lane {
                 Rectangle::new(
