@@ -11,6 +11,8 @@ use embedded_graphics::{
 
 // wait for everything to fully setup before taking inputs
 const COOLDOWN: u8 = 2;
+const ALIVENESS_MODULO: u8 = 4;
+const ALIVENESS_SLOWDOWN: u8 = 3;
 
 pub const BIG_TEXT: MonoTextStyle<BinaryColor> = MonoTextStyleBuilder::new()
     .font(&ascii::FONT_8X13)
@@ -19,6 +21,7 @@ pub const BIG_TEXT: MonoTextStyle<BinaryColor> = MonoTextStyleBuilder::new()
 
 pub struct Start {
     cooldown: u8,
+    aliveness: u8,
     pub transition: Option<Screen>,
 }
 
@@ -26,12 +29,14 @@ impl Start {
     pub fn new() -> Self {
         Self {
             cooldown: COOLDOWN,
+            aliveness: 0,
             transition: None,
         }
     }
 
     pub fn tick(&mut self) {
         self.cooldown = self.cooldown.saturating_sub(1);
+        self.aliveness = (self.aliveness + 1) % (ALIVENESS_MODULO * ALIVENESS_SLOWDOWN);
     }
 
     pub fn button_action(&mut self) {
@@ -68,17 +73,18 @@ impl Start {
         <D as DrawTarget>::Error: Debug,
     {
         for (num, text) in [
-            "Left buttons for up/down",
-            "Upper lane to turn left",
-            "Lower lane to turn right",
-            "",
-            "Red button to start game",
-            "",
-            "Be quick",
+            &["Left buttons for up/down"][..],
+            &["Upper lane to turn left"],
+            &["Lower lane to turn right"],
+            &[""],
+            &["Red button to start game"],
+            &[""],
+            &["Be quick", "Be quick.", "Be quick..", "Be quick..."],
         ]
         .iter()
         .enumerate()
         {
+            let text = text[(self.aliveness / ALIVENESS_SLOWDOWN) as usize % text.len()];
             let num = num as i32;
             let y = num * (gfx::TEXT_STYLE.font.character_size.height + 1) as i32;
             Text::with_baseline(text, Point::new(0, y), gfx::TEXT_STYLE, Baseline::Top)
