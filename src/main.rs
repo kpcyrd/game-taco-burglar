@@ -2,9 +2,11 @@
 #![no_main]
 
 mod big;
+mod game;
 mod gfx;
 mod small;
 
+use crate::game::Game;
 use defmt_rtt as _;
 use eh0::timer::CountDown;
 use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
@@ -25,8 +27,6 @@ use waveshare_rp2040_zero::{
     },
     Pins, XOSC_CRYSTAL_FREQ,
 };
-
-const TICK_THRESHOLD: i32 = 10;
 
 #[entry]
 fn main() -> ! {
@@ -90,13 +90,11 @@ fn main() -> ! {
     let mut last_state = false;
 
     // enter loop
-    // let mut lock_state = gfx::lock::LockState::new();
-    let mut travel_state = gfx::travel::TravelState::new(&mut rosc);
-    let mut tick_counter = 0;
+    let mut game = Game::new(&mut rosc);
     loop {
         while action_in_pin.is_low().unwrap() {
             if !last_state {
-                // ctr += 1;
+                game.button_action();
                 last_state = true;
             }
             delay.start(50.millis());
@@ -106,7 +104,7 @@ fn main() -> ! {
 
         while up_in_pin.is_low().unwrap() {
             if !last_state {
-                travel_state.button_up();
+                game.button_up();
                 last_state = true;
             }
             delay.start(50.millis());
@@ -116,7 +114,7 @@ fn main() -> ! {
 
         while down_in_pin.is_low().unwrap() {
             if !last_state {
-                travel_state.button_down();
+                game.button_down();
                 last_state = true;
             }
             delay.start(50.millis());
@@ -129,13 +127,11 @@ fn main() -> ! {
         big_display.clear();
 
         // render small screen
-        // lock_state.draw_small_screen(&mut small_display);
-        travel_state.draw_small_screen(&mut small_display);
+        game.draw_small_screen(&mut small_display);
         small_display.flush().unwrap();
 
         // render big screen
-        // lock_state.draw_big_screen(&mut big_display);
-        travel_state.draw_big_screen(&mut big_display);
+        game.draw_big_screen(&mut big_display);
         big_display.flush().unwrap();
 
         // sleep for frame rate
@@ -143,15 +139,7 @@ fn main() -> ! {
         let _ = nb::block!(delay.wait());
 
         // process the concept of tick
-        tick_counter += 1;
-        if tick_counter >= TICK_THRESHOLD {
-            /*
-            lock_state.open = !lock_state.open;
-            lock_state.score += 1;
-            */
-
-            tick_counter = 0;
-        }
-        travel_state.tick(&mut rosc);
+        game.tick();
+        game.transition();
     }
 }

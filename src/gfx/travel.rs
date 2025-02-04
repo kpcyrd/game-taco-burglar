@@ -1,3 +1,4 @@
+use crate::game::Screen;
 use crate::gfx;
 use core::fmt::Debug;
 use embedded_graphics::{
@@ -163,6 +164,7 @@ pub struct TravelState {
     next_square: u8,
     active_lane: u8,
     middle_strip: u8,
+    pub transition: Option<Screen>,
 }
 
 impl TravelState {
@@ -175,6 +177,7 @@ impl TravelState {
             next_square: TICKS_PER_TRAVEL_SQUARE,
             active_lane: 1,
             middle_strip: 0,
+            transition: None,
         };
         state.set_random_player(&mut random);
         state.set_random_goal(&mut random);
@@ -262,7 +265,10 @@ impl TravelState {
 
             if self.player == self.goal {
                 self.score += 1;
+                // place new goal
                 self.set_random_goal(random);
+                // we want to switch to lock mini game
+                self.transition = Some(Screen::Lock);
             }
         }
     }

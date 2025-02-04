@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::gfx;
 use core::fmt::Debug;
 use embedded_graphics::{

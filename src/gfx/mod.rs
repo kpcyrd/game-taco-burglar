@@ -1,8 +1,9 @@
 pub mod lock;
+pub mod start;
 pub mod travel;
 
 use embedded_graphics::{
-    mono_font::{ascii, MonoTextStyle, MonoTextStyleBuilder},
+    mono_font::{ascii, MonoFont, MonoTextStyle, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     primitives::PrimitiveStyle,
 };
@@ -39,4 +40,8 @@ pub const fn line_tweak(num: i32) -> i32 {
 
 pub const fn text_align_right(text: &str, total: u8) -> i32 {
     (total as usize - (text.len() * CHAR_WIDTH)) as i32
+}
+
+pub const fn text_align_center(text: &str, total: i32, font: &MonoFont) -> i32 {
+    centered(total, text.len() as u32 * font.character_size.width)
 }
