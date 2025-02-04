@@ -40,32 +40,24 @@ impl Map {
     }
 
     fn above(&self, x: usize, y: usize) -> Option<(usize, usize)> {
-        let Some(y) = y.checked_sub(1) else {
-            return None;
-        };
+        let y = y.checked_sub(1)?;
         self.0[y][x].then_some((x, y))
     }
 
     fn below(&self, x: usize, y: usize) -> Option<(usize, usize)> {
         let y = y + 1;
-        let Some(row) = self.0.get(y) else {
-            return None;
-        };
+        let row = self.0.get(y)?;
         row[x].then_some((x, y))
     }
 
     fn left(&self, x: usize, y: usize) -> Option<(usize, usize)> {
-        let Some(x) = x.checked_sub(1) else {
-            return None;
-        };
+        let x = x.checked_sub(1)?;
         self.0[y][x].then_some((x, y))
     }
 
     fn right(&self, x: usize, y: usize) -> Option<(usize, usize)> {
         let x = x + 1;
-        let Some(cell) = self.0[y].get(x) else {
-            return None;
-        };
+        let cell = self.0[y].get(x)?;
         cell.then_some((x, y))
     }
 
