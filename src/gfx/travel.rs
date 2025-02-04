@@ -19,7 +19,7 @@ const MAP_POINT: Point = Point::new(
     gfx::centered(gfx::DISPLAY_HEIGHT, CELL_SIZE * MAP_Y as u32),
 );
 
-const TICKS_PER_TRAVEL_SQUARE: u8 = 6;
+const TICKS_PER_TRAVEL_SQUARE: u8 = 7;
 
 const CELL_SIZE: u32 = 5;
 const SUB_CELL_SIZE: u32 = 2;
@@ -170,7 +170,7 @@ pub struct TravelState {
 impl TravelState {
     pub fn new<R: RngCore>(mut random: R) -> Self {
         let mut state = Self {
-            score: 1338,
+            score: 0,
             goal: (0, 0),
             player: (0, 0),
             direction: Direction::North,
@@ -264,7 +264,7 @@ impl TravelState {
             self.drive();
 
             if self.player == self.goal {
-                self.score += 1;
+                self.score += 100;
                 // place new goal
                 self.set_random_goal(random);
                 // we want to switch to lock mini game

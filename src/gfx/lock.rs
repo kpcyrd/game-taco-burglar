@@ -7,6 +7,7 @@ use embedded_graphics::{
     primitives::{Circle, Line, Rectangle, RoundedRectangle},
     text::{Baseline, Text},
 };
+use rand_core::RngCore;
 
 // small screen consts
 const CIRLCE_DIAMETER: u32 = 40;
@@ -76,10 +77,10 @@ pub struct LockState {
 }
 
 impl LockState {
-    pub fn new() -> Self {
+    pub fn new<R: RngCore>(score: u32, mut random: R) -> Self {
         Self {
             open: false,
-            score: 1338,
+            score,
             pins: [
                 LockPin::new(5),
                 LockPin::new(2),

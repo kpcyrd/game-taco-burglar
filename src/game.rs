@@ -21,7 +21,7 @@ impl<R: RngCore> Game<R> {
     pub fn new(mut random: R) -> Self {
         let start = gfx::start::Start::new();
         let travel = gfx::travel::TravelState::new(&mut random);
-        let lock = gfx::lock::LockState::new();
+        let lock = gfx::lock::LockState::new(0, &mut random);
 
         Self {
             random,
@@ -54,8 +54,7 @@ impl<R: RngCore> Game<R> {
                     Screen::Travel => (),
                     // switch to lock mini game
                     Screen::Lock => {
-                        self.lock = gfx::lock::LockState::new();
-                        self.lock.score = self.travel.score;
+                        self.lock = gfx::lock::LockState::new(self.travel.score, &mut self.random);
                         self.screen = screen;
                     }
                 }
