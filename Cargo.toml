@@ -24,6 +24,9 @@ lto = 'fat'
 opt-level = 3
 overflow-checks = false
 
+[features]
+de = []
+
 [dependencies]
 cortex-m-rt = "0.7.3"
 defmt-rtt = "0.4.0"

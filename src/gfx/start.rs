@@ -1,5 +1,6 @@
 use crate::game::Screen;
 use crate::gfx;
+use crate::i10n;
 use core::fmt::Debug;
 use embedded_graphics::{
     draw_target::DrawTarget,
@@ -72,18 +73,7 @@ impl Start {
     where
         <D as DrawTarget>::Error: Debug,
     {
-        for (num, text) in [
-            &["Left buttons for up/down"][..],
-            &["Upper lane to turn left"],
-            &["Lower lane to turn right"],
-            &[""],
-            &["Red button to start game"],
-            &[""],
-            &["Be quick", "Be quick.", "Be quick..", "Be quick..."],
-        ]
-        .iter()
-        .enumerate()
-        {
+        for (num, text) in i10n::INSTRUCTIONS.iter().enumerate() {
             let text = text[(self.aliveness / ALIVENESS_SLOWDOWN) as usize % text.len()];
             let num = num as i32;
             let y = num * (gfx::TEXT_STYLE.font.character_size.height + 1) as i32;

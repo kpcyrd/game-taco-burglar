@@ -4,6 +4,7 @@
 mod big;
 mod game;
 mod gfx;
+mod i10n;
 mod small;
 
 use crate::game::Game;
