@@ -86,6 +86,11 @@ impl LockPin {
     }
 
     pub const fn is_near_shear(&self) -> bool {
+        // if it reaches into the core, attempt is always failed
+        if (self.state + self.height) as u32 > PIN_HEIGHT - SHEAR_LINE_DISTANCE {
+            return false;
+        }
+
         true
     }
 }
