@@ -56,6 +56,8 @@ const PICK_SPEED: u8 = 1;
 const MIN_SCORE_REWARD: u32 = 100;
 const MAX_SCORE_REWARD: u32 = 250;
 
+const SOLVE_COOLDOWN: u8 = 5;
+
 // big screen absolute positions
 const LOCK_TOP_OFFSET: i32 =
     gfx::centered(gfx::DISPLAY_HEIGHT - SIDE_LOCK_Y_OFFSET, LOCK_HEIGHT) + SIDE_LOCK_Y_OFFSET;
@@ -101,6 +103,7 @@ pub struct LockState {
     pub reward: u32,
     pub pins: [LockPin; NUM_PINS],
     pub current_pin: u8,
+    pub solve_cooldown: u8,
     pub transition: Option<Screen>,
 }
 
@@ -118,6 +121,7 @@ impl LockState {
                 LockPin::random(&mut random),
             ],
             current_pin: (NUM_PINS - 1) as u8,
+            solve_cooldown: SOLVE_COOLDOWN,
             transition: None,
         }
     }
@@ -128,23 +132,34 @@ impl LockState {
     }
 
     pub fn tick(&mut self) {
-        let pin = self.current_pin();
-        pin.state = match pin.direction {
-            Direction::Up => pin.state.saturating_sub(PICK_SPEED),
-            Direction::Down => pin.state.saturating_add(PICK_SPEED),
-        };
-        pin.state = cmp::min(pin.state, PIN_HEIGHT as u8 - pin.height);
+        if self.open {
+            self.solve_cooldown = self.solve_cooldown.saturating_sub(1);
+            if self.solve_cooldown == 0 {
+                self.transition = Some(Screen::Travel);
+            }
+        } else {
+            let pin = self.current_pin();
+            pin.state = match pin.direction {
+                Direction::Up => pin.state.saturating_sub(PICK_SPEED),
+                Direction::Down => pin.state.saturating_add(PICK_SPEED),
+            };
+            pin.state = cmp::min(pin.state, PIN_HEIGHT as u8 - pin.height);
 
-        if pin.state == 0 {
-            pin.direction = Direction::Down;
-        }
+            if pin.state == 0 {
+                pin.direction = Direction::Down;
+            }
 
-        if (pin.state + pin.height) as u32 >= PIN_HEIGHT {
-            pin.direction = Direction::Up;
+            if (pin.state + pin.height) as u32 >= PIN_HEIGHT {
+                pin.direction = Direction::Up;
+            }
         }
     }
 
     pub fn button_action(&mut self) {
+        if self.open == true {
+            return;
+        }
+
         let pin = self.current_pin();
         if !pin.is_near_shear() {
             self.current_pin += 1;
@@ -154,7 +169,6 @@ impl LockState {
         if self.current_pin == 0 {
             self.score += self.reward;
             self.open = true;
-            self.transition = Some(Screen::Travel);
         } else {
             self.current_pin = self.current_pin.saturating_sub(1);
         }

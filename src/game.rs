@@ -36,7 +36,7 @@ impl<R: RngCore> Game<R> {
     pub fn transition(&mut self) {
         match self.screen {
             Screen::Start => {
-                let Some(screen) = self.travel.transition.take() else {
+                let Some(screen) = self.start.transition.take() else {
                     return;
                 };
 
