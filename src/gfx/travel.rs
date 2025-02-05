@@ -112,7 +112,7 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn turn_clockwise(&self) -> Self {
+    const fn turn_clockwise(&self) -> Self {
         match self {
             Direction::North => Direction::East,
             Direction::East => Direction::South,
@@ -121,7 +121,7 @@ impl Direction {
         }
     }
 
-    fn turn_counter_clockwise(&self) -> Self {
+    const fn turn_counter_clockwise(&self) -> Self {
         match self {
             Direction::North => Direction::West,
             Direction::East => Direction::North,
@@ -130,7 +130,7 @@ impl Direction {
         }
     }
 
-    fn as_str(&self) -> &'static str {
+    const fn as_str(&self) -> &'static str {
         match self {
             Direction::North => "north",
             Direction::East => "east",

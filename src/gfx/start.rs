@@ -27,7 +27,7 @@ pub struct Start {
 }
 
 impl Start {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             cooldown: COOLDOWN,
             aliveness: 0,

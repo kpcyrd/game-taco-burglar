@@ -36,11 +36,13 @@ impl<R: RngCore> Game<R> {
     pub fn transition(&mut self) {
         match self.screen {
             Screen::Start => {
-                if let Some(screen) = self.start.transition.take() {
-                    // this is always travel state
-                    self.travel = gfx::travel::TravelState::new(&mut self.random);
-                    self.screen = screen;
-                }
+                let Some(screen) = self.travel.transition.take() else {
+                    return;
+                };
+
+                // this is always travel state
+                self.travel = gfx::travel::TravelState::new(&mut self.random);
+                self.screen = screen;
             }
             Screen::Travel => {
                 let Some(screen) = self.travel.transition.take() else {
@@ -59,7 +61,23 @@ impl<R: RngCore> Game<R> {
                     }
                 }
             }
-            Screen::Lock => {}
+            Screen::Lock => {
+                let Some(screen) = self.lock.transition.take() else {
+                    return;
+                };
+
+                match screen {
+                    // game over
+                    Screen::Start => self.screen = screen,
+                    // switch to travel mini game
+                    Screen::Travel => {
+                        self.travel.score = self.lock.score;
+                        self.screen = screen;
+                    }
+                    // not possible
+                    Screen::Lock => (),
+                }
+            }
         }
     }
 
@@ -67,7 +85,7 @@ impl<R: RngCore> Game<R> {
         match self.screen {
             Screen::Start => self.start.tick(),
             Screen::Travel => self.travel.tick(&mut self.random),
-            Screen::Lock => (),
+            Screen::Lock => self.lock.tick(),
         }
     }
 
@@ -75,7 +93,7 @@ impl<R: RngCore> Game<R> {
         match self.screen {
             Screen::Start => self.start.button_action(),
             Screen::Travel => (),
-            Screen::Lock => (),
+            Screen::Lock => self.lock.button_action(),
         }
     }
 

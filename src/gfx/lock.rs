@@ -1,4 +1,6 @@
+use crate::game::Screen;
 use crate::gfx;
+use core::cmp;
 use core::fmt::Debug;
 use embedded_graphics::{
     draw_target::DrawTarget,
@@ -46,9 +48,10 @@ const PICK_Y_OFFSET: u32 = 3;
 const PICK_HOOK_HEIGHT: u32 = 3;
 
 // game constants
-#[allow(dead_code)]
-const MAX_CHALLENGE_SIZE: u32 = PIN_HEIGHT - SHEAR_LINE_DISTANCE - 2;
-static_assertions::const_assert!(MAX_CHALLENGE_SIZE == 14);
+const MIN_CHALLENGE_SIZE: u32 = 5;
+const MAX_CHALLENGE_SIZE: u32 = PIN_HEIGHT - SHEAR_LINE_DISTANCE - 4;
+static_assertions::const_assert!(MAX_CHALLENGE_SIZE == 12);
+const PICK_SPEED: u8 = 1;
 
 // big screen absolute positions
 const LOCK_TOP_OFFSET: i32 =
@@ -58,14 +61,31 @@ const SHEAR_LINE_TOP_OFFSET: i32 = KEYWAY_TOP_OFFSET - SHEAR_LINE_DISTANCE as i3
 const PINS_TOP_OFFSET: i32 = LOCK_TOP_OFFSET + PINS_Y_OFFSET as i32;
 const PINS_LEFT_OFFSET: i32 = LOCK_X_OFFSET + PINS_X_OFFSET as i32;
 
+pub enum Direction {
+    Up,
+    Down,
+}
+
 pub struct LockPin {
     pub state: u8,
-    pub solution: u8,
+    pub height: u8,
+    pub direction: Direction,
 }
 
 impl LockPin {
-    pub fn new(solution: u8) -> Self {
-        Self { state: 0, solution }
+    pub fn random<R: RngCore>(mut random: R) -> Self {
+        let num = random.next_u32() % (MAX_CHALLENGE_SIZE - MIN_CHALLENGE_SIZE + 1);
+        let height = num + MIN_CHALLENGE_SIZE;
+        let height = height as u8;
+        Self {
+            state: 0,
+            height,
+            direction: Direction::Down,
+        }
+    }
+
+    pub const fn is_near_shear(&self) -> bool {
+        true
     }
 }
 
@@ -74,6 +94,7 @@ pub struct LockState {
     pub score: u32,
     pub pins: [LockPin; NUM_PINS],
     pub current_pin: u8,
+    pub transition: Option<Screen>,
 }
 
 impl LockState {
@@ -82,13 +103,52 @@ impl LockState {
             open: false,
             score,
             pins: [
-                LockPin::new(5),
-                LockPin::new(2),
-                LockPin::new(8),
-                LockPin::new(11),
-                LockPin::new(2),
+                LockPin::random(&mut random),
+                LockPin::random(&mut random),
+                LockPin::random(&mut random),
+                LockPin::random(&mut random),
+                LockPin::random(&mut random),
             ],
             current_pin: (NUM_PINS - 1) as u8,
+            transition: None,
+        }
+    }
+
+    fn current_pin(&mut self) -> &mut LockPin {
+        self.current_pin %= NUM_PINS as u8;
+        &mut self.pins[self.current_pin as usize]
+    }
+
+    pub fn tick(&mut self) {
+        let pin = self.current_pin();
+        pin.state = match pin.direction {
+            Direction::Up => pin.state.saturating_sub(PICK_SPEED),
+            Direction::Down => pin.state.saturating_add(PICK_SPEED),
+        };
+        pin.state = cmp::min(pin.state, PIN_HEIGHT as u8 - pin.height);
+
+        if pin.state == 0 {
+            pin.direction = Direction::Down;
+        }
+
+        if (pin.state + pin.height) as u32 >= PIN_HEIGHT {
+            pin.direction = Direction::Up;
+        }
+    }
+
+    pub fn button_action(&mut self) {
+        let pin = self.current_pin();
+        if !pin.is_near_shear() {
+            self.current_pin += 1;
+            return;
+        }
+
+        if self.current_pin == 0 {
+            // TODO: add score
+            self.open = true;
+            self.transition = Some(Screen::Travel);
+        } else {
+            self.current_pin = self.current_pin.saturating_sub(1);
         }
     }
 
@@ -141,7 +201,7 @@ impl LockState {
 
             Rectangle::new(
                 point + Point::new(1, 1 + pin.state as i32),
-                Size::new(PIN_WIDTH - 2, pin.solution as u32),
+                Size::new(PIN_WIDTH - 2, pin.height as u32),
             )
             .into_styled(gfx::WHITE)
             .draw(display)
