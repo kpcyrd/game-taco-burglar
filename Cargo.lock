@@ -338,6 +338,7 @@ dependencies = [
  "itoa",
  "nb 1.1.0",
  "panic-halt",
+ "rand",
  "rand_core",
  "sh1106",
  "ssd1306",
@@ -567,6 +568,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "rand"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+dependencies = [
+ "rand_core",
 ]
 
 [[package]]

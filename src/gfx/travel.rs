@@ -10,6 +10,7 @@ use embedded_graphics::{
     primitives::Rectangle,
     text::{Baseline, Text},
 };
+use rand::Rng;
 use rand_core::RngCore;
 
 const BIKE: ImageRaw<BinaryColor> = ImageRaw::new(include_bytes!("../../video/bike.raw"), 24);
@@ -148,7 +149,7 @@ enum LineOrientation {
 
 fn random_valid_position<R: RngCore>(mut random: R) -> (usize, usize) {
     loop {
-        let num = random.next_u32() as usize % (MAP_X * MAP_Y);
+        let num = random.gen_range(0..MAP_X * MAP_Y);
         let y = num / MAP_X;
         let x = num - (y * MAP_X);
         if MAP.get(x, y) {
@@ -243,7 +244,7 @@ impl TravelState {
         self.active_lane = cmp::min(self.active_lane + 1, NUM_LANES - 1);
     }
 
-    pub fn tick<R: RngCore>(&mut self, random: R) {
+    pub fn tick(&mut self) {
         // run animation
         self.middle_strip += MIDDLE_STRIP_STEP_SIZE;
         self.middle_strip %= MIDDLE_STRIP_LENGTH + MIDDLE_STRIP_GAP;
@@ -265,9 +266,6 @@ impl TravelState {
             self.drive();
 
             if self.player == self.goal {
-                self.score += 100;
-                // place new goal
-                self.set_random_goal(random);
                 // we want to switch to lock mini game
                 self.transition = Some(Screen::Lock);
             }

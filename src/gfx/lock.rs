@@ -8,6 +8,7 @@ use embedded_graphics::{
     prelude::*,
     primitives::{Circle, Line, Rectangle, RoundedRectangle},
 };
+use rand::Rng;
 use rand_core::RngCore;
 
 // small screen consts
@@ -52,6 +53,9 @@ const MAX_CHALLENGE_SIZE: u32 = PIN_HEIGHT - SHEAR_LINE_DISTANCE - 4;
 static_assertions::const_assert!(MAX_CHALLENGE_SIZE == 12);
 const PICK_SPEED: u8 = 1;
 
+const MIN_SCORE_REWARD: u32 = 100;
+const MAX_SCORE_REWARD: u32 = 250;
+
 // big screen absolute positions
 const LOCK_TOP_OFFSET: i32 =
     gfx::centered(gfx::DISPLAY_HEIGHT - SIDE_LOCK_Y_OFFSET, LOCK_HEIGHT) + SIDE_LOCK_Y_OFFSET;
@@ -73,9 +77,7 @@ pub struct LockPin {
 
 impl LockPin {
     pub fn random<R: RngCore>(mut random: R) -> Self {
-        let num = random.next_u32() % (MAX_CHALLENGE_SIZE - MIN_CHALLENGE_SIZE + 1);
-        let height = num + MIN_CHALLENGE_SIZE;
-        let height = height as u8;
+        let height = random.gen_range(MIN_CHALLENGE_SIZE..=MAX_CHALLENGE_SIZE) as u8;
         Self {
             state: 0,
             height,
@@ -91,6 +93,7 @@ impl LockPin {
 pub struct LockState {
     pub open: bool,
     pub score: u32,
+    pub reward: u32,
     pub pins: [LockPin; NUM_PINS],
     pub current_pin: u8,
     pub transition: Option<Screen>,
@@ -101,6 +104,7 @@ impl LockState {
         Self {
             open: false,
             score,
+            reward: random.gen_range(MIN_SCORE_REWARD..=MAX_SCORE_REWARD),
             pins: [
                 LockPin::random(&mut random),
                 LockPin::random(&mut random),
@@ -143,7 +147,7 @@ impl LockState {
         }
 
         if self.current_pin == 0 {
-            // TODO: add score
+            self.score += self.reward;
             self.open = true;
             self.transition = Some(Screen::Travel);
         } else {

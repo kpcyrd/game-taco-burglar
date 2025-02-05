@@ -72,6 +72,7 @@ impl<R: RngCore> Game<R> {
                     // switch to travel mini game
                     Screen::Travel => {
                         self.travel.score = self.lock.score;
+                        self.travel.set_random_goal(&mut self.random);
                         self.screen = screen;
                     }
                     // not possible
@@ -84,7 +85,7 @@ impl<R: RngCore> Game<R> {
     pub fn tick(&mut self) {
         match self.screen {
             Screen::Start => self.start.tick(),
-            Screen::Travel => self.travel.tick(&mut self.random),
+            Screen::Travel => self.travel.tick(),
             Screen::Lock => self.lock.tick(),
         }
     }
