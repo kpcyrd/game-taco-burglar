@@ -7,7 +7,6 @@ use embedded_graphics::{
     pixelcolor::BinaryColor,
     prelude::*,
     primitives::{Circle, Line, Rectangle, RoundedRectangle},
-    text::{Baseline, Text},
 };
 use rand_core::RngCore;
 
@@ -238,16 +237,7 @@ impl LockState {
         .unwrap();
 
         // render score
-        let mut buf = itoa::Buffer::new();
-        let buf = buf.format(self.score);
-        Text::with_baseline(
-            buf,
-            Point::new(gfx::text_align_right(buf, gfx::DISPLAY_WIDTH as u8), 0),
-            gfx::TEXT_STYLE,
-            Baseline::Top,
-        )
-        .draw(display)
-        .unwrap();
+        gfx::render_tacos(display, self.score);
     }
 
     pub fn draw_small_screen<D: DrawTarget<Color = BinaryColor>>(&self, display: &mut D)
