@@ -52,6 +52,7 @@ const MIN_CHALLENGE_SIZE: u32 = 5;
 const MAX_CHALLENGE_SIZE: u32 = PIN_HEIGHT - SHEAR_LINE_DISTANCE - 4;
 static_assertions::const_assert!(MAX_CHALLENGE_SIZE == 12);
 const PICK_SPEED: u8 = 1;
+const SOLVE_TOLERANCE: u32 = 2;
 
 const MIN_SCORE_REWARD: u32 = 100;
 const MAX_SCORE_REWARD: u32 = 250;
@@ -88,12 +89,21 @@ impl LockPin {
     }
 
     pub const fn is_near_shear(&self) -> bool {
-        // if it reaches into the core, attempt is always failed
-        if (self.state + self.height) as u32 > PIN_HEIGHT - SHEAR_LINE_DISTANCE {
+        let total_pin = (self.state + self.height) as u32;
+
+        // check the distance to the shear line
+        // always return false if we're inside the core
+        let Some(distance) = (PIN_HEIGHT - SHEAR_LINE_DISTANCE).checked_sub(total_pin) else {
+            return false;
+        };
+
+        // still reaches inside the core
+        if distance == 0 {
             return false;
         }
 
-        true
+        // check if within acceptable range
+        distance <= SOLVE_TOLERANCE
     }
 }
 
