@@ -137,7 +137,7 @@ impl LockState {
     }
 
     fn current_pin(&mut self) -> &mut LockPin {
-        self.current_pin %= NUM_PINS as u8;
+        self.current_pin = cmp::min(self.current_pin, NUM_PINS as u8 - 1);
         &mut self.pins[self.current_pin as usize]
     }
 
