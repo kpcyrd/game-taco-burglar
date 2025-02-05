@@ -1,5 +1,6 @@
 use crate::game::Screen;
 use crate::gfx;
+use core::cmp;
 use core::fmt::Debug;
 use embedded_graphics::{
     draw_target::DrawTarget,
@@ -239,7 +240,7 @@ impl TravelState {
     }
 
     pub fn button_down(&mut self) {
-        self.active_lane = (self.active_lane + 1) % NUM_LANES;
+        self.active_lane = cmp::min(self.active_lane + 1, NUM_LANES - 1);
     }
 
     pub fn tick<R: RngCore>(&mut self, random: R) {
